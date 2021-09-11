@@ -1,0 +1,21 @@
+{
+  "name": "vectorizer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "cross-spawn": "^7.0.3",
+    "fs-extra": "^10.0.0",
+    "heic-decode": "^1.1.2",
+    "nearest-color": "^0.4.4",
+    "os": "^0.1.1",
+    "path": "^0.12.7",
+    "potrace": "^2.1.8",
+    "quantize": "^1.0.2",
+    "sharp": "^0.28.1",
+    "string.prototype.replaceall": "^1.0.5",
+    "svgo": "^2.3.0",
+    "tinycolor2": "^1.4.2",
+    "uuid": "^8.3.2"
+  }
+}

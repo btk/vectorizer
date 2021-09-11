@@ -1,0 +1,27 @@
+vnull
+test.swf
+
+# Plot of the sigma function
+# (no. of lattice points for a given radius of a 4 dimensional sphere)
+# position of prime numbers is also plotted. One can see that the primes
+# are located on a straight line (f3(x) = x+1)
+-func
+f1(i)=sigma4(i);
+drcolor 32 64 0;
+object markcircle;
+msize 0.15;
+#x3(i)=i; y3(i)=sigma4(i);
+f3(x)=x+1;
+drcolor 255 32 32;	
+object markrect;
+msize 0.3;
+x1(i)=KV_PRIMES[i]; y1(i)=KV_PRIMES[i];
+endfunc
+-xmin 2200 -xmax 2500
+-ymin 0 -ymax 13000
+-nstep 2000
+-lwidth 50.0
+-mode aniso
+-paper user 300 100
+-bkcolor 200 240 200
+-xdim 2000 -ydim 200

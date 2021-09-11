@@ -1,0 +1,28 @@
+# This Example shows how to use the summation symbol
+# f1(x) is the series expansion of cos(x)
+# using different colors	
+# input file must be "vnull":
+
+# Inputname must be 'vnull' for plotting operations
+vnull	
+#name of outputfile
+test.swf	
+# the expansion goes over the first 25 terms of the expansion
+-func	
+c1=5.0; k=2;
+drcolor 0 0 128;	
+f1(x)=1+SUM(n=1,25,(-1)^n*x^(2*n)/(2*n)!);	
+drcolor 128 0 64;
+f2(x)=cos(x);	
+endfunc	
+-bkcolor 220 220 255	
+# set the linewidth
+-lwidth 1
+# set 1000 interpolation steps	
+-nstep 1000	
+-paper user 130 130	
+-mode aniso	
+-xmin -20.5 -xmax 20.5	
+-debug all
+# set the scaling mode for the Windows SWF viewer to anisotrop:
+-scmode 2
