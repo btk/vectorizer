@@ -6,6 +6,7 @@
   "dependencies": {
     "cross-spawn": "^7.0.3",
     "fs-extra": "^10.0.0",
+    "get-image-colors": "^4.0.0",
     "heic-decode": "^1.1.2",
     "nearest-color": "^0.4.4",
     "os": "^0.1.1",

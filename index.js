@@ -6,6 +6,7 @@ const quantize = require("quantize");
 const SVGO = require("svgo");
 const NearestColor = require("nearest-color");
 const replaceAll = require("string.prototype.replaceall");
+const getColors = require('get-image-colors')
 replaceAll.shim();
 
 // https://stackoverflow.com/a/39077686
@@ -71,7 +72,6 @@ function getSolid(svg) {
       };
     });
   for (const color of colors) {
-    console.log(color.fillOpacity);
     svg = svg.replaceAll(color.fillOpacity, `fill="${color.hex}" stroke-width="1" stroke="${color.hex}"`);
     svg = svg.replaceAll(` stroke="none"`, "");
   }
@@ -96,8 +96,6 @@ async function getPixels(input) {
 
 async function replaceColors(svg, original) {
   // if greyscale image, return greyscale svg
-  console.log(svg);
-  return svg;
   if ((await (await sharp(original).metadata()).channels) === 1) {
     return svg;
   }
@@ -105,13 +103,13 @@ async function replaceColors(svg, original) {
   const hexRegex = /#([a-f0-9]{3}){1,2}\b/gi;
   const matches = svg.match(hexRegex);
   const colors = Array.from(new Set(matches));
-  //console.log(colors);
   const pixelIndexesOfNearestColors = {}; // hex: [array of pixel indexes]
   colors.forEach((color) => (pixelIndexesOfNearestColors[color] = []));
 
   const svgPixels = await getPixels(Buffer.from(svg));
 
   const nearestColor = NearestColor.from(colors);
+  console.log(colors);
 
   svgPixels.pixels.forEach((pixel, index) => {
     // curly braces for scope https://stackoverflow.com/a/49350263
@@ -168,6 +166,9 @@ async function replaceColors(svg, original) {
     const rgb = `rgb(${r}, ${g}, ${b})`;
     colorsToReplace[hexKey] = hexify(rgb);
   });
+
+  console.log("oldColor", colorsToReplace);
+
   Object.entries(colorsToReplace).forEach(([oldColor, newColor]) => {
     svg = svg.replaceAll(oldColor, newColor);
   });
@@ -175,15 +176,15 @@ async function replaceColors(svg, original) {
   return svg;
 }
 
-async function start() {
-  let imageName = "image-asset";
+async function parseImage(imageName, step, colors) {
+
   let svg = await new Promise((resolve, reject) => {
     potrace.posterize(
       "./"+imageName+".png",
       {
         // number of colors
-        optTolerance: 1,
-        steps: [40, 85, 135, 180, 220]
+        optTolerance: 0.5,
+        steps: step
       },
       function (err, svg) {
         if (err) return reject(err);
@@ -191,10 +192,81 @@ async function start() {
       }
     );
   });
+
   svg = getSolid(svg);
+
+  if(step == 1){
+    console.log(svg);
+  }
+
   svg = await replaceColors(svg, await fs.readFile("./"+imageName+".png"));
+
+
   svg = (await SVGO.optimize(svg)).data;
   fs.outputFileSync("./"+imageName+".svg", svg);
   console.log("done");
 }
-start();
+
+async function inspectImage(imageName){
+  let options = [];
+
+  let listColors = await getColors("./"+imageName+".png", {count: 5});
+
+  let hslList = listColors.map(color => color.hsl());
+  let rgbList = listColors.map(color => color.rgb());
+  let hexList = listColors.map(color => color.hex());
+
+  let isBlackAndWhite = hslList[hslList.length - 1][2] < 0.05;
+
+  if(isBlackAndWhite){
+    options.push({step: 1, colors: ["#000000"]});
+
+  }else{
+
+    let hueArray = hslList.map((color, i) => {
+      if(isNaN(color[0])){
+        return 0;
+      }else{
+        return color[0];
+      }
+    });
+
+    let lumArray = hslList.map((color, i) => {
+      if(isNaN(color[2])){
+        return 0;
+      }else{
+        return color[2];
+      }
+    });
+
+    let hueDifference = 0;
+    let lumDifference = 0;
+    for (var i = 0; i < hueArray.length; i++) {
+      if(i != 0){
+        hueDifference += Math.abs(hueArray[i-1] - hueArray[i]);
+        lumDifference += Math.abs(lumArray[i-1] - lumArray[i]);
+      }
+    }
+
+    let isMonocolor = hueDifference < 5 && lumDifference < 2;
+
+    if(isMonocolor){
+      options.push({step: 1, colors: hexList[hexList.length-1]});
+    }else{
+      let duoColor = await getColors("./"+imageName+".png", {count: 2});
+      options.push({step: 2, colors: duoColor.map(color => color.hex())});
+      let triColor = await getColors("./"+imageName+".png", {count: 3});
+      options.push({step: 3, colors: triColor.map(color => color.hex())});
+      let quadColor = await getColors("./"+imageName+".png", {count: 4});
+      options.push({step: 4, colors: quadColor.map(color => color.hex())});
+    }
+
+  }
+
+  console.log(options);
+  let optionIndex = 0;
+  parseImage(imageName, options[optionIndex].step, options[optionIndex].colors);
+
+}
+
+inspectImage("navicon");
