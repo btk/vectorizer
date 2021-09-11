@@ -74,7 +74,6 @@ function getSolid(svg) {
     console.log(color.fillOpacity);
     svg = svg.replaceAll(color.fillOpacity, `fill="${color.hex}" stroke-width="1" stroke="${color.hex}"`);
     svg = svg.replaceAll(` stroke="none"`, "");
-    console.log(svg);
   }
   return svg;
 }
@@ -97,6 +96,8 @@ async function getPixels(input) {
 
 async function replaceColors(svg, original) {
   // if greyscale image, return greyscale svg
+  console.log(svg);
+  return svg;
   if ((await (await sharp(original).metadata()).channels) === 1) {
     return svg;
   }
@@ -104,7 +105,7 @@ async function replaceColors(svg, original) {
   const hexRegex = /#([a-f0-9]{3}){1,2}\b/gi;
   const matches = svg.match(hexRegex);
   const colors = Array.from(new Set(matches));
-console.log(colors);
+  //console.log(colors);
   const pixelIndexesOfNearestColors = {}; // hex: [array of pixel indexes]
   colors.forEach((color) => (pixelIndexesOfNearestColors[color] = []));
 
@@ -181,7 +182,7 @@ async function start() {
       "./"+imageName+".png",
       {
         // number of colors
-        optTolerance: 0.5,
+        optTolerance: 1,
         steps: [40, 85, 135, 180, 220]
       },
       function (err, svg) {
