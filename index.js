@@ -44,7 +44,7 @@ function combineOpacity(a, b) {
   return 1 - (1 - a) * (1 - b);
 }
 
-function getSolid(svg) {
+function getSolid(svg, stroke) {
   svg = svg.replaceAll(`fill="black"`, "");
   const opacityRegex = /fill-opacity="[\d\.]+"/gi;
   const numberRegex = /[\d\.]+/;
@@ -72,8 +72,13 @@ function getSolid(svg) {
       };
     });
   for (const color of colors) {
-    svg = svg.replaceAll(color.fillOpacity, `fill="${color.hex}" stroke-width="1" stroke="${color.hex}"`);
-    svg = svg.replaceAll(` stroke="none"`, "");
+    if(stroke){
+      svg = svg.replaceAll(color.fillOpacity, `fill="${color.hex}" stroke-width="1" stroke="${color.hex}"`);
+      svg = svg.replaceAll(` stroke="none"`, "");
+    }else{
+      svg = svg.replaceAll(color.fillOpacity, `fill="${color.hex}"`);
+      svg = svg.replaceAll(` stroke="none"`, "");
+    }
   }
   return svg;
 }
@@ -109,7 +114,6 @@ async function replaceColors(svg, original) {
   const svgPixels = await getPixels(Buffer.from(svg));
 
   const nearestColor = NearestColor.from(colors);
-  console.log(colors);
 
   svgPixels.pixels.forEach((pixel, index) => {
     // curly braces for scope https://stackoverflow.com/a/49350263
@@ -167,8 +171,6 @@ async function replaceColors(svg, original) {
     colorsToReplace[hexKey] = hexify(rgb);
   });
 
-  console.log("oldColor", colorsToReplace);
-
   Object.entries(colorsToReplace).forEach(([oldColor, newColor]) => {
     svg = svg.replaceAll(oldColor, newColor);
   });
@@ -193,20 +195,23 @@ async function parseImage(imageName, step, colors) {
     );
   });
 
-  svg = getSolid(svg);
+  svg = getSolid(svg, step != 1);
 
   if(step == 1){
-    console.log(svg);
+    let paths = svg.split("<path");
+    svg = paths[0]+"<path"+paths[2];
+    let color = svg.split('#')[1].split('"')[0];
+    svg = svg.replaceAll("#"+color, colors[0]);
+  }else{
+    svg = await replaceColors(svg, await fs.readFile("./"+imageName+".png"));
   }
-
-  svg = await replaceColors(svg, await fs.readFile("./"+imageName+".png"));
-
 
   svg = (await SVGO.optimize(svg)).data;
   fs.outputFileSync("./"+imageName+".svg", svg);
   console.log("done");
 }
 
+// frontend safe!
 async function inspectImage(imageName){
   let options = [];
 
@@ -216,7 +221,18 @@ async function inspectImage(imageName){
   let rgbList = listColors.map(color => color.rgb());
   let hexList = listColors.map(color => color.hex());
 
+  let isWhiteBackground = hslList[0][2] > 0.80;
+  if(isWhiteBackground){
+    hslList = hslList.slice(1);
+    rgbList = rgbList.slice(1);
+    hexList = hexList.slice(1);
+  }
+
   let isBlackAndWhite = hslList[hslList.length - 1][2] < 0.05;
+
+  if(isNaN(hslList[hslList.length-1][0])){
+    isBlackAndWhite = true;
+  }
 
   if(isBlackAndWhite){
     options.push({step: 1, colors: ["#000000"]});
@@ -251,14 +267,12 @@ async function inspectImage(imageName){
     let isMonocolor = hueDifference < 5 && lumDifference < 2;
 
     if(isMonocolor){
-      options.push({step: 1, colors: hexList[hexList.length-1]});
+      options.push({step: 1, colors: [hexList[hexList.length-1]]});
     }else{
-      let duoColor = await getColors("./"+imageName+".png", {count: 2});
-      options.push({step: 2, colors: duoColor.map(color => color.hex())});
-      let triColor = await getColors("./"+imageName+".png", {count: 3});
-      options.push({step: 3, colors: triColor.map(color => color.hex())});
-      let quadColor = await getColors("./"+imageName+".png", {count: 4});
-      options.push({step: 4, colors: quadColor.map(color => color.hex())});
+      options.push({step: 1, colors: hexList.slice(0,1)});
+      options.push({step: 2, colors: hexList.slice(0,2)});
+      options.push({step: 3, colors: hexList.slice(0,3)});
+      options.push({step: 4, colors: hexList.slice(0,4)});
     }
 
   }
@@ -269,4 +283,6 @@ async function inspectImage(imageName){
 
 }
 
-inspectImage("navicon");
+inspectImage("asd");
+//inspectImage("image-asset");
+//inspectImage("coffee");
