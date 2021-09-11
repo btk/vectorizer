@@ -178,6 +178,14 @@ async function replaceColors(svg, original) {
   return svg;
 }
 
+function viewBoxify(svg){
+  let width = svg.split('width="')[1].split('"')[0];
+  let height = svg.split('height="')[1].split('"')[0];
+
+  let originalHeader = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`;
+  return svg.replace(originalHeader, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">`);
+}
+
 async function parseImage(imageName, step, colors) {
 
   let svg = await new Promise((resolve, reject) => {
@@ -207,6 +215,9 @@ async function parseImage(imageName, step, colors) {
   }
 
   svg = (await SVGO.optimize(svg)).data;
+
+  svg = viewBoxify(svg);
+
   fs.outputFileSync("./"+imageName+".svg", svg);
   console.log("done");
 }
