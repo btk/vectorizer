@@ -294,6 +294,6 @@ async function inspectImage(imageName){
 
 }
 
-inspectImage("Screenshot_5");
+inspectImage("test");
 //inspectImage("image-asset");
 //inspectImage("coffee");
