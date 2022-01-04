@@ -1,12 +1,13 @@
-const potrace = require("potrace");
-const fs = require("fs-extra");
-const sharp = require("sharp");
-const tinycolor = require("tinycolor2");
-const quantize = require("quantize");
-const SVGO = require("svgo");
-const NearestColor = require("nearest-color");
-const replaceAll = require("string.prototype.replaceall");
-const getColors = require('get-image-colors')
+import potrace from "potrace";
+import fs from "fs-extra";
+import sharp from "sharp";
+import tinycolor from "tinycolor2";
+import quantize from "quantize";
+import SVGO from "svgo";
+import NearestColor from "nearest-color";
+import replaceAll from "string.prototype.replaceall";
+import getColors from 'get-image-colors';
+
 replaceAll.shim();
 
 // https://stackoverflow.com/a/39077686
@@ -222,7 +223,6 @@ async function parseImage(imageName, step, colors) {
   console.log("done");
 }
 
-// frontend safe!
 async function inspectImage(imageName){
   let options = [];
 
@@ -288,12 +288,9 @@ async function inspectImage(imageName){
 
   }
 
-  console.log(options);
-  let optionIndex = 0;
-  parseImage(imageName, options[optionIndex].step, options[optionIndex].colors);
+  return options;
 
 }
 
-inspectImage("Screenshot_5");
-//inspectImage("image-asset");
-//inspectImage("coffee");
+
+export  { inspectImage, parseImage };
